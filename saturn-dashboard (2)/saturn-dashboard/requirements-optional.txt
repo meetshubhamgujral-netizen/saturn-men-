@@ -1,0 +1,9 @@
+# OPTIONAL extras. The app runs fully WITHOUT these and enables the matching
+# features automatically when they are present. Install locally with:
+#   pip install -r requirements-optional.txt
+# Do NOT add these to the Streamlit Cloud requirements unless you have confirmed
+# they build on the Cloud's Python version — shap in particular can fail to
+# compile there, which aborts the whole deploy.
+xgboost>=2.0      # adds XGBoost classifier/regressor to the model zoo
+shap>=0.45        # adds SHAP feature-impact plots on the Explainable AI page
+reportlab>=4.0    # enables true PDF report export (HTML fallback otherwise)

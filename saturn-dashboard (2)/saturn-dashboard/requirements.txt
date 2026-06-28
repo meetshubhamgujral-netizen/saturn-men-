@@ -1,0 +1,9 @@
+# Core dependencies — all ship prebuilt wheels and install cleanly on
+# Streamlit Community Cloud. This is all the app needs to run end to end.
+streamlit>=1.36
+pandas>=2.0
+numpy>=1.26
+plotly>=5.22
+scikit-learn>=1.4
+scipy>=1.11
+openpyxl>=3.1
