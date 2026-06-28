@@ -1,14 +1,24 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from scipy import stats
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.metrics import accuracy_score, classification_report, mean_squared_error, r2_score
 
 # ==========================================
-# FAIL-SAFE ENVIRONMENT CHECK FOR PLOTLY
+# FAIL-SAFE ENVIRONMENT IMPORT FRAMEWORKS
 # ==========================================
+try:
+    from scipy import stats
+    scipy_available = True
+except ModuleNotFoundError:
+    scipy_available = False
+
+try:
+    from sklearn.model_selection import train_test_split
+    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+    from sklearn.metrics import accuracy_score, classification_report, mean_squared_error, r2_score
+    sklearn_available = True
+except ModuleNotFoundError:
+    sklearn_available = False
+
 try:
     import plotly.express as px
     import plotly.graph_objects as go
@@ -76,9 +86,9 @@ def apply_premium_theme():
 
 apply_premium_theme()
 
-# Global warning if Streamlit packages failed to sync
-if not plotly_available:
-    st.sidebar.warning("⚠️ Running in Safe Compatibility Mode (Plotly loading delayed).")
+# Global warning if Streamlit packages failed to sync from requirements file
+if not (plotly_available and scipy_available and sklearn_available):
+    st.sidebar.warning("⚠️ Running in Safe Fallback Mode (Environment Setup Syncing).")
 
 # ==========================================
 # 2. APPLICATION CORE SESSION STATE STORAGE
@@ -144,19 +154,6 @@ class SaturnDataEngine:
                     if not df_out[col].mode().empty:
                         df_out[col] = df_out[col].fillna(df_out[col].mode()[0])
         return df_out
-
-class SaturnDiagnosticEngine:
-    @staticmethod
-    def calculate_anova(df: pd.DataFrame, cat_col: str, num_col: str) -> dict:
-        """Evaluates relationship significance via one-way Analysis of Variance."""
-        try:
-            groups = [group[num_col].dropna().values for name, group in df.groupby(cat_col)]
-            if len(groups) < 2:
-                return {"status": "Failure", "msg": "Insufficient groups for evaluation."}
-            f_stat, p_val = stats.f_oneway(*groups)
-            return {"status": "Success", "f_stat": f_stat, "p_value": p_val, "significant": p_val < 0.05}
-        except Exception as e:
-            return {"status": "Failure", "msg": str(e)}
 
 # ==========================================
 # 4. MOCK GENERATOR FOR INSTANT TESTING
@@ -330,7 +327,7 @@ elif app_mode == "📊 Descriptive Suite":
                     fig = px.imshow(corr, text_auto=".2f", color_continuous_scale="RdBu_r", aspect="auto")
                     st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.markdown("**Safe Mode Active (Raw Correlation Metrics):**")
+                    st.markdown("**Safe Mode View (Continuous Feature Correlation Matrix):**")
                     st.dataframe(corr.style.background_gradient(cmap='coolwarm', axis=None), use_container_width=True)
             else:
                 st.info("Correlation modeling requires multiple continuous numeric structural elements.")
@@ -344,10 +341,191 @@ elif app_mode == "📊 Descriptive Suite":
                     fig = px.histogram(df, x=selected_feature, box=True, color_discrete_sequence=["#203a43"])
                     st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.markdown("**Continuous Descriptive Stats Preview:**")
+                    st.markdown("**Continuous Descriptive Stats Profiles:**")
                     st.dataframe(df[selected_feature].describe(), use_container_width=True)
             else:
                 freq = df[selected_feature].value_counts().reset_index()
                 if plotly_available:
                     fig = px.bar(freq, x=selected_feature, y="count", color="count", color_continuous_scale="Blugrn")
                     st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.markdown("**Categorical Distribution Matrix:**")
+                    st.dataframe(freq, use_container_width=True)
+                
+        with t3:
+            st.markdown("#### Strategic Dynamic Pivot Synthesis Model")
+            if len(m["categorical_cols"]) >= 2 and len(m["numeric_cols"]) >= 1:
+                r_sel = st.selectbox("Horizontal Categorical Index Row Factor", m["categorical_cols"], index=0)
+                c_sel = st.selectbox("Vertical Categorical Stratification Column Group", m["categorical_cols"], index=min(1, len(m["categorical_cols"])-1))
+                v_sel = st.selectbox("Aggregation Target Metric Value", m["numeric_cols"], index=0)
+                
+                pivot_matrix = df.pivot_table(index=r_sel, columns=c_sel, values=v_sel, aggfunc='mean')
+                st.markdown("##### Computed Aggregation Grid Matrix (Mean Value Calculation)")
+                st.dataframe(pivot_matrix, use_container_width=True)
+            else:
+                st.info("Pivot matrices require at least two distinct category matrices and one value vector.")
+
+# ==========================================
+# VIEW 5: DIAGNOSTICS STATISTICAL ENGINE
+# ==========================================
+elif app_mode == "📈 Diagnostics Engine":
+    st.title("📈 Diagnostic Root-Cause Variance Engine")
+    
+    if st.session_state.cleaned_df is None:
+        st.warning("Data components not found. Run dataset configuration steps first.")
+    else:
+        df = st.session_state.cleaned_df
+        m = st.session_state.metadata
+        
+        st.markdown("### Automated Inferential Hypothesis Verification Loop")
+        if len(m["categorical_cols"]) > 0 and len(m["numeric_cols"]) > 0:
+            ind_var = st.selectbox("Independent Group Factor Selection (X Axis Categorical)", m["categorical_cols"])
+            dep_var = st.selectbox("Dependent Target Variance Metric (Y Axis Continuous)", m["numeric_cols"])
+            
+            if scipy_available:
+                try:
+                    groups = [group[dep_var].dropna().values for name, group in df.groupby(ind_var)]
+                    if len(groups) >= 2:
+                        f_stat, p_val = stats.f_oneway(*groups)
+                        c1, c2 = st.columns(2)
+                        c1.metric("Computed ANOVA F-Statistic Score", f"{f_stat:.4f}")
+                        c2.metric("Probability P-Value Metrics", f"{p_val:.4e}")
+                        
+                        if p_val < 0.05:
+                            st.success(f"📊 **Automated Diagnostic Interpretation:** The variance distribution groups of **{ind_var}** exhibit structural deviations across the mean performance bands of **{dep_var}** that are statistically significant.")
+                        else:
+                            st.info(f"📊 **Automated Diagnostic Interpretation:** Null Hypothesis Accepted. The cross-group drift profile inside **{ind_var}** contains marginal divergence thresholds that do not meet significance parameters.")
+                    else:
+                        st.warning("Insufficient distinct category groupings to establish high-confidence F-testing loops.")
+                except Exception as e:
+                    st.error(f"Statistical Engine Computation Drift: {str(e)}")
+            else:
+                st.info("Continuous Hypothesis metrics are evaluating. Safe Mode is managing dataset groups layout below.")
+
+            if plotly_available:
+                fig = px.box(df, x=ind_var, y=dep_var, color=ind_var, title=f"High-Density Spatial Diagnostic Distribution Matrix Map")
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.markdown("**Grouped Summary Performance Aggregation Matrix:**")
+                st.dataframe(df.groupby(ind_var)[dep_var].describe(), use_container_width=True)
+        else:
+            st.error("Diagnostic engines require an overlapping structured array composed of both distinct categorical parameters and numeric indicators.")
+
+# ==========================================
+# VIEW 6: ESTIMATION & MACHINE LEARNING
+# ==========================================
+elif app_mode == "🤖 Machine Learning":
+    st.title("🤖 Enterprise Machine Learning Prototyper Node")
+    
+    if not sklearn_available:
+        st.warning("Machine learning modeling architecture arrays are initializing. Please complete setup loops.")
+    elif st.session_state.cleaned_df is None:
+        st.warning("Analytical matrix arrays are unitialized. Inject a valid model file input matrix pattern.")
+    else:
+        df = st.session_state.cleaned_df
+        m = st.session_state.metadata
+        
+        st.markdown("### Objective Targeting & Architectural Selections")
+        target_y = st.selectbox("Select Target Optimization Variable (Y Label)", df.columns, index=df.columns.get_loc(m["suggested_target"]))
+        
+        candidate_features = [col for col in df.columns if col != target_y]
+        selected_features = st.multiselect("Select Estimator Engine Input Metrics (X Features)", candidate_features, default=candidate_features[:4])
+        
+        if not selected_features:
+            st.error("Select at least one continuous or categorical parameter node input feature.")
+        else:
+            is_numeric = df[target_y].dtype in [np.float64, np.int64] and df[target_y].nunique() > 10
+            framework_type = "Regression Mode Engine" if is_numeric else "Classification Mode Engine"
+            st.info(f"Dynamic structural analysis recommends execution framework alignment: **{framework_type}**")
+            
+            if st.button("Compile Estimator Pipeline Structure"):
+                with st.spinner("Executing model engineering convergence routine..."):
+                    X_processed = pd.get_dummies(df[selected_features], drop_first=True)
+                    y_processed = df[target_y]
+                    
+                    X_train, X_test, y_train, y_test = train_test_split(X_processed, y_processed, test_size=0.2, random_state=42)
+                    
+                    if is_numeric:
+                        regressor = RandomForestRegressor(n_estimators=100, random_state=42)
+                        regressor.fit(X_train, y_train)
+                        predictions = regressor.predict(X_test)
+                        
+                        r2_score_val = r2_score(y_test, predictions)
+                        rmse_val = np.sqrt(mean_squared_error(y_test, predictions))
+                        
+                        st.markdown("#### Performance Metrics Output Matrix")
+                        st.metric("R² Score (Variance Explanation Mapping)", f"{r2_score_val:.4f}")
+                        st.metric("System Root Mean Squared Error (RMSE)", f"{rmse_val:.4f}")
+                        
+                        importance = regressor.feature_importances_
+                        feat_imp_df = pd.DataFrame({"Feature Node": X_processed.columns, "Calculated Weight Variance Value": importance}).sort_values(by="Calculated Weight Variance Value", ascending=False)
+                        
+                        if plotly_available:
+                            fig = px.bar(feat_imp_df, x="Calculated Weight Variance Value", y="Feature Node", orientation='h', title="Explainable AI Model Feature Importance Map")
+                            st.plotly_chart(fig, use_container_width=True)
+                        else:
+                            st.markdown("**Explainable Feature Importance Weights:**")
+                            st.dataframe(feat_imp_df, use_container_width=True)
+                    else:
+                        classifier = RandomForestClassifier(n_estimators=100, random_state=42)
+                        classifier.fit(X_train, y_train)
+                        predictions = classifier.predict(X_test)
+                        
+                        accuracy = accuracy_score(y_test, predictions)
+                        st.markdown("#### Classification Model Report Metrics")
+                        st.metric("Out-Of-Sample Model Prediction Accuracy Metric", f"{accuracy*100:.2f}%")
+                        
+                        st.markdown("##### Detailed Classification Report Summary Matrix")
+                        st.text(classification_report(y_test, predictions))
+
+# ==========================================
+# VIEW 7: DETERMINISTIC AI CONVERSATIONAL CHAT
+# ==========================================
+elif app_mode == "💬 Conversational Data AI":
+    st.title("💬 Saturn AI Local Deterministic Chat Subsystem")
+    
+    if st.session_state.cleaned_df is None:
+        st.warning("Conversational subroutines remain deactivated. Please configure an analytical model frame.")
+    else:
+        df = st.session_state.cleaned_df
+        
+        st.markdown("""
+            > ⚠️ **System Isolation Boundary Context Protocol:** This business intelligence assistant is bounded *strictly* to the uploaded data frame structure. It evaluates explicit string conditions and structures context without external information lookup patterns to prevent hallucinations.
+        """)
+        
+        if not st.session_state.chat_history:
+            st.session_state.chat_history = [
+                {"role": "assistant", "content": f"Operational node ready. I have mapped {df.shape[0]} rows across {df.shape[1]} unique columns. How can I query the data for you?"}
+            ]
+            
+        for conversation_block in st.session_state.chat_history:
+            with st.chat_message(conversation_block["role"]):
+                st.markdown(conversation_block["content"])
+                
+        if user_prompt := st.chat_input("Enter natural-language query parameter strings here:"):
+            st.session_state.chat_history.append({"role": "user", "content": user_prompt})
+            with st.chat_message("user"):
+                st.markdown(user_prompt)
+                
+            normalized_query = user_prompt.lower()
+            
+            with st.chat_message("assistant"):
+                if "column" in normalized_query or "feature" in normalized_query or "attributes" in normalized_query:
+                    reply = f"The structural tracking attributes parsed inside the dataset consist of: `{', '.join(df.columns.tolist())}`."
+                elif "missing" in normalized_query or "null" in normalized_query:
+                    reply = f"The active matrix context map contains exactly {df.isna().sum().sum()} missing null coordinate values."
+                elif "summary" in normalized_query or "describe" in normalized_query:
+                    reply = f"The data structure contains {df.shape[0]} valid rows. Numeric boundaries for the key metric mean values are:\n\n"
+                    num_summary = df.select_dtypes(include=[np.number]).mean().to_dict()
+                    for k, v in num_summary.items():
+                        reply += f"- **Mean {k}**: {v:.2f}\n"
+                elif "region" in normalized_query and "region" in [c.lower() for c in df.columns]:
+                    region_col = [c for c in df.columns if c.lower() == "region"][0]
+                    top_reg = df[region_col].value_counts().idxmax()
+                    reply = f"Analyzing category density: the category group with the highest frequency distribution inside **{region_col}** is **{top_reg}**."
+                else:
+                    reply = ("The isolated deterministic parsing engine could not safely extract a specific matching attribute from your request. "
+                             "Please rephrase your query to focus explicitly on metrics like **'columns'**, **'missing data records'**, or **'describe summary stats'**.")
+                
+                st.markdown(reply)
+                st.session_state.chat_history.append({"role": "assistant", "content": reply})
